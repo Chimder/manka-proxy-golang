@@ -5,16 +5,12 @@ COPY . .
 RUN go mod download
 RUN apk --no-cache add ca-certificates
 
-RUN go build -o ./example-golang ./cmd/api/main.go
-
+RUN go build -o ./example-golang ./main.go
 
 FROM alpine:latest AS runner
 
 WORKDIR /app
 COPY --from=builder /app/example-golang .
 
-ENV REDIS_URL=$REDIS_URL
-ENV DB_URL=$DB_URL
-
-EXPOSE 4000
+EXPOSE 8080
 ENTRYPOINT ["./example-golang"]
