@@ -5,7 +5,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/go-chi/chi"
@@ -31,8 +30,7 @@ func Routes() http.Handler {
 }
 
 func proxyHandler(w http.ResponseWriter, r *http.Request) {
-
-
+	client := &http.Client{}
 
 	apiURL := "https://api.mangadex.org" + r.RequestURI
 	log.Println("API URL:", apiURL)
