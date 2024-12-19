@@ -89,7 +89,9 @@ func proxyHandlerImg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req.Header.Set("User-Agent", "YourCustomUserAgent/1.0")
+	req.Header.Set("User-Agent", "YourCustomUserAgent/Chimas")
+	req.Header.Set("Accept", "image/*")
+	req.Header.Set("Accept-Encoding", "gzip, deflate, br")
 
 	for key, values := range r.Header {
 		if strings.ToLower(key) == "via" {
@@ -120,5 +122,7 @@ func proxyHandlerImg(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	io.Copy(w, resp.Body)
+	if _, err := io.Copy(w, resp.Body); err != nil {
+		http.Error(w, "Failed to copy response body", http.StatusInternalServerError)
+	}
 }
