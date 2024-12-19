@@ -93,14 +93,14 @@ func proxyHandlerImg(w http.ResponseWriter, r *http.Request) {
 	req.Header.Set("Accept", "image/*")
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br")
 
-	for key, values := range r.Header {
-		if strings.ToLower(key) == "via" {
-			continue
-		}
-		for _, value := range values {
-			req.Header.Add(key, value)
-		}
-	}
+	// for key, values := range r.Header {
+	// 	if strings.ToLower(key) == "via" {
+	// 		continue
+	// 	}
+	// 	for _, value := range values {
+	// 		req.Header.Add(key, value)
+	// 	}
+	// }
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
