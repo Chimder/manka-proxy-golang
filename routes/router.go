@@ -3,7 +3,6 @@ package routes
 import (
 	"compress/gzip"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 
@@ -83,7 +82,6 @@ func proxyHandlerImg(w http.ResponseWriter, r *http.Request) {
 	} else {
 		apiURL = "https://" + urlPath
 	}
-
 
 	req, err := http.NewRequest("GET", apiURL, nil)
 	if err != nil {
