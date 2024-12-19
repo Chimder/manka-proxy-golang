@@ -33,7 +33,6 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	client := &http.Client{}
 
 	apiURL := "https://api.mangadex.org" + r.RequestURI
-	log.Println("API URL:", apiURL)
 
 	req, err := http.NewRequest(r.Method, apiURL, nil)
 	if err != nil {
@@ -78,8 +77,6 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 func proxyHandlerImg(w http.ResponseWriter, r *http.Request) {
 	urlPath := r.URL.Path[len("/img/"):]
 
-	log.Println("FIRS>>>>", urlPath)
-
 	var apiURL string
 	if strings.HasPrefix(urlPath, "http://") || strings.HasPrefix(urlPath, "https://") {
 		apiURL = urlPath
@@ -87,7 +84,6 @@ func proxyHandlerImg(w http.ResponseWriter, r *http.Request) {
 		apiURL = "https://" + urlPath
 	}
 
-	log.Println("Image API URL:", apiURL)
 
 	req, err := http.NewRequest("GET", apiURL, nil)
 	if err != nil {
@@ -95,7 +91,12 @@ func proxyHandlerImg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	req.Header.Set("User-Agent", "YourCustomUserAgent/1.0")
+
 	for key, values := range r.Header {
+		if strings.ToLower(key) == "via" {
+			continue
+		}
 		for _, value := range values {
 			req.Header.Add(key, value)
 		}
@@ -109,11 +110,17 @@ func proxyHandlerImg(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
 	w.WriteHeader(resp.StatusCode)
+
 	for key, values := range resp.Header {
 		for _, value := range values {
 			w.Header().Add(key, value)
 		}
 	}
+
 	io.Copy(w, resp.Body)
 }
