@@ -70,7 +70,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	w.Header().Set("Cache-Control", "public, max-age=3600, stale-while-revalidate=600")
+	w.Header().Set("Cache-Control", "public, max-age=900, stale-while-revalidate=60")
 	w.WriteHeader(resp.StatusCode)
 
 	io.Copy(w, resp.Body)
