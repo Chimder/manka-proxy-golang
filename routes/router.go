@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"compress/gzip"
 	"io"
 	"net/http"
 	"strings"
@@ -13,18 +12,21 @@ import (
 
 func Routes() http.Handler {
 	r := chi.NewRouter()
+
 	r.Use(middleware.Logger)
+
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins: []string{"*"},
-		AllowedMethods: []string{"GET", "POST", "OPTIONS"},
-		AllowedHeaders: []string{"Accept", "Content-Type"},
-		ExposedHeaders: []string{"Link"},
-		// AllowCredentials: true,
-		MaxAge: 1200,
+		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           1200,
 	}))
 
 	r.Get("/img/*", proxyHandlerImg)
 	r.Get("/*", proxyHandler)
+
 	return r
 }
 
@@ -32,8 +34,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	client := &http.Client{}
 
 	apiURL := "https://api.mangadex.org" + r.RequestURI
-
-	req, err := http.NewRequest(r.Method, apiURL, nil)
+	req, err := http.NewRequest(r.Method, apiURL, r.Body)
 	if err != nil {
 		http.Error(w, "Failed to create request", http.StatusInternalServerError)
 		return
@@ -52,25 +53,19 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
-	w.WriteHeader(resp.StatusCode)
 	for key, values := range resp.Header {
+		if key == "Access-Control-Allow-Origin" || key == "Access-Control-Allow-Credentials" {
+			continue
+		}
 		for _, value := range values {
 			w.Header().Add(key, value)
 		}
 	}
 
-	var reader io.Reader = resp.Body
-	if strings.Contains(resp.Header.Get("Content-Encoding"), "gzip") {
-		gzipReader, err := gzip.NewReader(resp.Body)
-		if err != nil {
-			http.Error(w, "Failed to decompress response", http.StatusInternalServerError)
-			return
-		}
-		defer gzipReader.Close()
-		reader = gzipReader
-	}
+	w.Header().Set("Cache-Control", "public, max-age=3600, stale-while-revalidate=600")
+	w.WriteHeader(resp.StatusCode)
 
-	io.Copy(w, reader)
+	io.Copy(w, resp.Body)
 }
 
 func proxyHandlerImg(w http.ResponseWriter, r *http.Request) {
@@ -93,15 +88,6 @@ func proxyHandlerImg(w http.ResponseWriter, r *http.Request) {
 	req.Header.Set("Accept", "image/*")
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br")
 
-	// for key, values := range r.Header {
-	// 	if strings.ToLower(key) == "via" {
-	// 		continue
-	// 	}
-	// 	for _, value := range values {
-	// 		req.Header.Add(key, value)
-	// 	}
-	// }
-
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -110,13 +96,10 @@ func proxyHandlerImg(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-	w.WriteHeader(resp.StatusCode)
-
 	for key, values := range resp.Header {
+		if key == "Access-Control-Allow-Origin" || key == "Access-Control-Allow-Credentials" {
+			continue
+		}
 		for _, value := range values {
 			w.Header().Add(key, value)
 		}
