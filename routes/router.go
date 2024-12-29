@@ -15,16 +15,18 @@ import (
 
 func Routes() http.Handler {
 	r := chi.NewRouter()
+
 	err := godotenv.Load()
 	if err != nil {
 		log.Println("Error loading .env file")
 	}
 	corsSite := os.Getenv("CORS_ALLOWED_ORIGINS")
+	allowedOrigins := strings.Split(corsSite, ",")
 
 	r.Use(middleware.Logger)
 
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{corsSite},
+		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
